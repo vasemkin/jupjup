@@ -1,0 +1,61 @@
+{
+  "name": "ddca",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/ddca/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": [
+        "{options.outputPath}"
+      ],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "dist/apps/ddca",
+        "main": "apps/ddca/src/main.ts",
+        "tsConfig": "apps/ddca/tsconfig.app.json",
+        "assets": [
+          "apps/ddca/src/assets"
+        ],
+        "webpackConfig": "apps/ddca/webpack.config.js"
+      },
+      "configurations": {
+        "development": {},
+        "production": {}
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "ddca:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "ddca:build:development"
+        },
+        "production": {
+          "buildTarget": "ddca:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": [
+        "{options.outputFile}"
+      ]
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "apps/ddca/jest.config.ts"
+      }
+    }
+  },
+  "tags": []
+}
