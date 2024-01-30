@@ -376,7 +376,7 @@ components:
             in: query
             required: true
             schema:
-                type: integer
+                type: string
         SlippageParameter:
             name: slippageBps
             description: The slippage % in BPS. If the output token amount exceeds the slippage then the swap transaction will fail.

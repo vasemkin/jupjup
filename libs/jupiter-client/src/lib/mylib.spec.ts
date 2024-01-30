@@ -6,7 +6,7 @@ describe('axios-client', () => {
 		const res = await getQuote({
 			inputMint: SOLANA_NATIVE_SOL_ADDRESS,
 			outputMint: SOLANA_WEN_ADDRESS,
-			amount: 100000000,
+			amount: '100000000',
 		})
 
 		expect(res.inputMint).toEqual(SOLANA_NATIVE_SOL_ADDRESS)

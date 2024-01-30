@@ -21,7 +21,7 @@ describe('AppService', () => {
 			const res = await getQuote({
 				inputMint: SOLANA_NATIVE_SOL_ADDRESS,
 				outputMint: SOLANA_WEN_ADDRESS,
-				amount: 100000,
+				amount: '100000',
 			})
 
 			console.log({ res })

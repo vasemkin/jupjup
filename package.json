@@ -4,6 +4,8 @@
 	"license": "MIT",
 	"scripts": {
 		"prettier": "pnpm nx format:write --all",
+		"prepare": "pnpm nx run jupiter-client:generate",
+		"test": "pnpm nx run-many -t test",
 		"test:app": "pnpm nx test ddca --verbose",
 		"test:jup-client": "pnpm nx test jupiter-client --verbose"
 	},
