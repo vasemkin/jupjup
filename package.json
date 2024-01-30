@@ -3,6 +3,7 @@
 	"version": "0.0.0",
 	"license": "MIT",
 	"scripts": {
+		"prettier": "pnpm nx format:write --all",
 		"test:app": "pnpm nx test ddca --verbose",
 		"test:jup-client": "pnpm nx test jupiter-client --verbose"
 	},
