@@ -18,16 +18,13 @@ describe('AppService', () => {
 
 	describe.only('getData', () => {
 		it('should get data from jupiter client', async () => {
-			const res = await getQuote({
-				inputMint: SOLANA_NATIVE_SOL_ADDRESS,
-				outputMint: SOLANA_WEN_ADDRESS,
-				amount: '100000',
-			})
-
-			console.log({ res })
-
-			// expect(
-			// ).not.toThrow
+			expect(
+				await getQuote({
+					inputMint: SOLANA_NATIVE_SOL_ADDRESS,
+					outputMint: SOLANA_WEN_ADDRESS,
+					amount: '100000',
+				}),
+			).not.toThrow
 		})
 	})
 })

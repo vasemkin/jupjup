@@ -8,7 +8,7 @@
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"importHelpers": true,
-		"target": "es2015",
+		"target": "ESNext",
 		"module": "esnext",
 		"lib": ["es2020", "dom"],
 		"skipLibCheck": true,
@@ -16,7 +16,8 @@
 		"baseUrl": ".",
 		"paths": {
 			"@jupjup/constants": ["libs/constants/src/index.ts"],
-			"@jupjup/jupiter-client": ["libs/jupiter-client/src/index.ts"]
+			"@jupjup/jupiter-client": ["libs/jupiter-client/src/index.ts"],
+			"@jupjup/utils": ["libs/utils/src/index.ts"]
 		}
 	},
 	"exclude": ["node_modules", "tmp"]
