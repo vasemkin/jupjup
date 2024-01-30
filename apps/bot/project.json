@@ -1,7 +1,7 @@
 {
-	"name": "ddca",
+	"name": "bot",
 	"$schema": "../../node_modules/nx/schemas/project-schema.json",
-	"sourceRoot": "apps/ddca/src",
+	"sourceRoot": "apps/bot/src",
 	"projectType": "application",
 	"targets": {
 		"build": {
@@ -11,11 +11,11 @@
 			"options": {
 				"target": "node",
 				"compiler": "tsc",
-				"outputPath": "dist/apps/ddca",
-				"main": "apps/ddca/src/main.ts",
-				"tsConfig": "apps/ddca/tsconfig.app.json",
-				"assets": ["apps/ddca/src/assets"],
-				"webpackConfig": "apps/ddca/webpack.config.js"
+				"outputPath": "dist/apps/bot",
+				"main": "apps/bot/src/main.ts",
+				"tsConfig": "apps/bot/tsconfig.app.json",
+				"assets": ["apps/bot/src/assets"],
+				"webpackConfig": "apps/bot/webpack.config.js"
 			},
 			"configurations": {
 				"development": {},
@@ -26,14 +26,14 @@
 			"executor": "@nx/js:node",
 			"defaultConfiguration": "development",
 			"options": {
-				"buildTarget": "ddca:build"
+				"buildTarget": "bot:build"
 			},
 			"configurations": {
 				"development": {
-					"buildTarget": "ddca:build:development"
+					"buildTarget": "bot:build:development"
 				},
 				"production": {
-					"buildTarget": "ddca:build:production"
+					"buildTarget": "bot:build:production"
 				}
 			}
 		},
@@ -45,7 +45,7 @@
 			"executor": "@nx/jest:jest",
 			"outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
 			"options": {
-				"jestConfig": "apps/ddca/jest.config.ts"
+				"jestConfig": "apps/bot/jest.config.ts"
 			}
 		}
 	},

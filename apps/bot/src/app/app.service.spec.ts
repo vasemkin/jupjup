@@ -2,7 +2,10 @@ import { Test } from '@nestjs/testing'
 
 import { AppService } from './app.service'
 
-import { SOLANA_NATIVE_SOL_ADDRESS, SOLANA_WEN_ADDRESS } from '@jupjup/constants'
+import {
+	SOLANA_NATIVE_SOL_ADDRESS,
+	SOLANA_WEN_ADDRESS,
+} from '@jupjup/constants'
 import { getQuote } from '@jupjup/jupiter-client'
 
 describe('AppService', () => {
@@ -16,7 +19,7 @@ describe('AppService', () => {
 		service = app.get<AppService>(AppService)
 	})
 
-	describe.only('getData', () => {
+	describe('getData', () => {
 		it('should get data from jupiter client', async () => {
 			expect(
 				await getQuote({

@@ -8,14 +8,13 @@ import { getQuote, QuoteResponse } from '@jupjup/jupiter-client'
  * exchange rate between USDC and the specified SPL Token. It then calculates and returns
  * the amount of SPL Token that would be received for the specified amount of USDC.
  *
- * @param {number} usdcAmount - The amount of USDC to be traded. This should be a positive number.
- * @param {string} usdcMint - The mint address for USDC. This is used to specify the type of USDC being traded.
- * @param {string} splTokenMint - The mint address for the SPL Token to be received. This identifies which SPL Token is being exchanged for.
- * @returns {Promise<number>} A promise that resolves to the amount of SPL Token that can be received.
+ * @param usdcAmount - The amount of USDC to be traded. This should be a positive number.
+ * @param splTokenMint - The mint address for the SPL Token to be received. This identifies which SPL Token is being exchanged for.
+ * @returns A promise that resolves to the amount of SPL Token that can be received.
  *
  * @example
  * // Example usage
- * calculateSPLTokenAmount(100, 'USDC_Mint_Address', 'SPL_Token_Mint_Address')
+ * calculateSPLTokenAmount('100', 'SPL_Token_Mint_Address')
  *   .then(amount => console.log(`You will receive ${amount} SPL Tokens`))
  *   .catch(error => console.error(error));
  *
@@ -28,58 +27,60 @@ import { getQuote, QuoteResponse } from '@jupjup/jupiter-client'
 export const calculateSPLTokenAmount = async (
 	usdcAmount: string,
 	splTokenMint: string,
-): Promise<number> => {
-	// Call getQuote with USDC amount and mint addresses
-	let quoteResponse: QuoteResponse
+): Promise<{ amount: number | null; error: string | null }> => {
 	try {
-		quoteResponse = await getQuote({
+		const quoteResponse = await getQuote({
 			inputMint: SOLANA_USDC_ADDRESS,
 			outputMint: splTokenMint,
 			amount: usdcAmount,
 		})
+
+		if (!quoteResponse || !quoteResponse.outAmount) {
+			return { amount: null, error: 'Invalid quote response' }
+		}
+
+		const splTokenAmount = parseFloat(quoteResponse.outAmount)
+		return { amount: splTokenAmount, error: null }
 	} catch (error) {
 		console.error('Error getting quote: ', error)
-		throw new Error('Unable to get quote')
+		return { amount: null, error: 'Unable to get quote' }
 	}
-
-	// Check if the response is valid
-	if (!quoteResponse || !quoteResponse.outAmount) {
-		throw new Error('Invalid quote response')
-	}
-
-	// Convert outAmount to number (assuming it's a string in the response)
-	const splTokenAmount = parseFloat(quoteResponse.outAmount)
-
-	// You can add additional checks or logic here if needed
-
-	return splTokenAmount
 }
 
 /**
- * Parses a decimal USDC amount to its string representation in the smallest unit.
- *
- * USDC, like many tokens on Solana, uses 6 decimal places. This function converts
- * a decimal USDC value into the equivalent amount in the smallest unit, represented
- * as a string. For example, an input of 10.5 will be converted to '10500000'.
- *
- * @param {number} usdcAmount - The decimal USDC amount.
- * @returns {string} The string representation of the USDC amount in the smallest unit.
+ * Parses a decimal amount to its string representation in the smallest unit based on the specified decimal places.
+ * This function converts a decimal value into the equivalent amount in the smallest unit, represented as a string.
  *
  * @example
- * // Example usage
- * const amount = parseUSDC(10.5); // '10500000'
+ * const amount = parseDecimals(10.5, 6); // '10500000' for 6 decimal places
  *
- * @throws {Error} Throws an error if the input is not a valid number.
+ * @param amount - The decimal amount to be parsed.
+ * @param decimals - The number of decimal places for the conversion.
+ * @returns The string representation of the amount in the smallest unit.
  */
-export const parseUSDC = (usdcAmount: number): string => {
-	if (typeof usdcAmount === 'undefined' || isNaN(usdcAmount) || usdcAmount < 0) {
-		throw new Error('Invalid USDC amount')
+export const parseDecimals = (
+	amount: number,
+	decimals: number,
+): { result: string | null; error: string | null } => {
+	if (typeof amount === 'undefined' || isNaN(amount) || amount < 0 || decimals < 0) {
+		return { result: null, error: 'Invalid input' }
 	}
 
-	const decimals = 6 // USDC has 6 decimal places
 	const smallestUnitMultiplier = 10 ** decimals
-	const smallestUnitAmount = usdcAmount * smallestUnitMultiplier
+	const smallestUnitAmount = amount * smallestUnitMultiplier
 
-	// Use BigInt to avoid precision issues with very large numbers
-	return BigInt(smallestUnitAmount).toString()
+	return { result: BigInt(Math.round(smallestUnitAmount)).toString(), error: null }
 }
+
+/**
+ * Specialized function of parseDecimals for USDC. Parses a decimal USDC amount to its string
+ * representation in the smallest unit. USDC uses 6 decimal places.
+ *
+ * @example
+ * const usdcAmount = parseUSDC(10.5); // '10500000'
+ *
+ * @param amount - The decimal USDC amount to be parsed.
+ * @returns The string representation of the USDC amount in the smallest unit.
+ */
+export const parseUSDC = (amount: number): { result: string | null; error: string | null } =>
+	parseDecimals(amount, 6)
