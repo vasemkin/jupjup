@@ -62,14 +62,22 @@ export const parseDecimals = (
 	amount: number,
 	decimals: number,
 ): { result: string | null; error: string | null } => {
-	if (typeof amount === 'undefined' || isNaN(amount) || amount < 0 || decimals < 0) {
+	if (
+		typeof amount === 'undefined' ||
+		isNaN(amount) ||
+		amount < 0 ||
+		decimals < 0
+	) {
 		return { result: null, error: 'Invalid input' }
 	}
 
 	const smallestUnitMultiplier = 10 ** decimals
 	const smallestUnitAmount = amount * smallestUnitMultiplier
 
-	return { result: BigInt(Math.round(smallestUnitAmount)).toString(), error: null }
+	return {
+		result: BigInt(Math.round(smallestUnitAmount)).toString(),
+		error: null,
+	}
 }
 
 /**
@@ -82,5 +90,6 @@ export const parseDecimals = (
  * @param amount - The decimal USDC amount to be parsed.
  * @returns The string representation of the USDC amount in the smallest unit.
  */
-export const parseUSDC = (amount: number): { result: string | null; error: string | null } =>
-	parseDecimals(amount, 6)
+export const parseUSDC = (
+	amount: number,
+): { result: string | null; error: string | null } => parseDecimals(amount, 6)

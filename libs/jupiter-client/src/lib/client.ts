@@ -276,7 +276,10 @@ export const getQuote = (
 	params: GetQuoteParams,
 	options?: SecondParameter<typeof customInstance>,
 ) => {
-	return customInstance<QuoteResponse>({ url: `/quote`, method: 'GET', params }, options)
+	return customInstance<QuoteResponse>(
+		{ url: `/quote`, method: 'GET', params },
+		options,
+	)
 }
 
 /**
@@ -321,7 +324,9 @@ export const postSwapInstructions = (
  * Returns a hash, which key is the program id and value is the label. This is used to help map error from transaction by identifying the fault program id. With that, we can use the `excludeDexes` or `dexes` parameter.
  * @summary GET /program-id-to-label
  */
-export const getProgramIdToLabel = (options?: SecondParameter<typeof customInstance>) => {
+export const getProgramIdToLabel = (
+	options?: SecondParameter<typeof customInstance>,
+) => {
 	return customInstance<GetProgramIdToLabel200>(
 		{ url: `/program-id-to-label`, method: 'GET' },
 		options,
@@ -351,5 +356,9 @@ export type PostSwapResult = NonNullable<Awaited<ReturnType<typeof postSwap>>>
 export type PostSwapInstructionsResult = NonNullable<
 	Awaited<ReturnType<typeof postSwapInstructions>>
 >
-export type GetProgramIdToLabelResult = NonNullable<Awaited<ReturnType<typeof getProgramIdToLabel>>>
-export type GetIndexedRouteMapResult = NonNullable<Awaited<ReturnType<typeof getIndexedRouteMap>>>
+export type GetProgramIdToLabelResult = NonNullable<
+	Awaited<ReturnType<typeof getProgramIdToLabel>>
+>
+export type GetIndexedRouteMapResult = NonNullable<
+	Awaited<ReturnType<typeof getIndexedRouteMap>>
+>
