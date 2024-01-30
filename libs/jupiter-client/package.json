@@ -1,0 +1,13 @@
+{
+	"name": "@jupjup/jupiter-client",
+	"version": "0.0.1",
+	"main": "./index.js",
+	"module": "./index.mjs",
+	"typings": "./index.d.ts",
+	"devDependencies": {
+		"orval": "^6.23.0"
+	},
+	"scripts": {
+		"generate": "orval --config ./src/lib/orval.config.js"
+	}
+}
