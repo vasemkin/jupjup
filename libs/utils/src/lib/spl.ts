@@ -163,3 +163,10 @@ export async function getTokenExchangeRate(
 		return null
 	}
 }
+
+export function getExchangeRateFromOutSwapValue(
+	inSwapAmount: number,
+	outSwapValue: number,
+): number {
+	return outSwapValue / inSwapAmount
+}

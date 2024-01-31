@@ -20,7 +20,11 @@ import {
 	Token,
 } from '@jupjup/constants'
 
-import { getTokenExchangeRate, getTokenValue } from '@jupjup/utils'
+import {
+	getExchangeRateFromOutSwapValue,
+	getTokenExchangeRate,
+	getTokenValue,
+} from '@jupjup/utils'
 
 import { SettingsService } from '../settings/settings.service'
 import { QuoteResponse, postSwap } from '@jupjup/jupiter-client'
@@ -65,7 +69,7 @@ export class TradingService {
 		this.backToken = SOLANA_JUP
 	}
 
-	@Interval(5 * 1000)
+	@Interval(15 * 1000)
 	async txNotMined() {
 		if (this.isTrading && !this.tradeSuccess) {
 			Logger.log('Trade unsuccessful, aborting')
@@ -74,17 +78,19 @@ export class TradingService {
 		}
 	}
 
-	@Interval(10 * 1000)
+	@Interval(30 * 1000)
 	async trade() {
 		const forwardTokenBalance = await this.getTokenBalance(
 			this.forwardToken.address,
 		)
-		console.log({ forwardTokenBalance })
+		this.logger.log(
+			`${this.forwardToken.symbol} balance: ${forwardTokenBalance}`,
+		)
 
 		const backTokenBalance = await this.getTokenBalance(
 			this.backToken.address,
 		)
-		console.log({ backTokenBalance })
+		this.logger.log(`${this.backToken.symbol} balance: ${backTokenBalance}`)
 
 		this.isTrading = true
 		if (forwardTokenBalance > backTokenBalance) {
@@ -93,81 +99,69 @@ export class TradingService {
 			await this.swapBack()
 		}
 		this.isTrading = false
+	}
 
-		await this.swapBack()
+	async swapLogic(forwardToken: Token, backToken: Token) {
+		const exchangeSumUsd = this.settingsService.getSettings().usdBudget
+
+		if (forwardToken.address === SOLANA_USDC.address) {
+			const swapIn = parseFloat(exchangeSumUsd)
+
+			const forwardValue = await getTokenValue(
+				forwardToken,
+				backToken,
+				swapIn,
+			)
+
+			const exchangeRate = getExchangeRateFromOutSwapValue(
+				swapIn,
+				forwardValue.value,
+			)
+
+			this.logger.log(
+				` ${forwardToken.symbol} -> ${backToken.symbol} exchange rate: ${exchangeRate}`,
+			)
+			this.logger.log(
+				`Swapping ${forwardToken.symbol} -> ${backToken.symbol} for value: ${forwardValue.value}`,
+			)
+
+			await this.swap(forwardValue.quote)
+		} else {
+			const usdcValue = await getTokenValue(
+				SOLANA_USDC,
+				forwardToken,
+				parseFloat(exchangeSumUsd),
+			)
+
+			const swapIn = usdcValue.value
+
+			const forwardValue = await getTokenValue(
+				forwardToken,
+				backToken,
+				swapIn,
+			)
+
+			const exchangeRate = getExchangeRateFromOutSwapValue(
+				swapIn,
+				forwardValue.value,
+			)
+			this.logger.log(
+				`${forwardToken.symbol} -> ${backToken.symbol} exchange rate: ${exchangeRate}`,
+			)
+			this.logger.log(
+				`Swapping ${forwardToken.symbol} -> ${backToken.symbol} for value: ${forwardValue.value}`,
+			)
+
+			await this.swap(forwardValue.quote)
+		}
 	}
 
 	async swapForward() {
-		const exchangeSumUsd = this.settingsService.getSettings().usdBudget
-
-		if (this.forwardToken.address === SOLANA_USDC.address) {
-			const forwardRate = await getTokenExchangeRate(
-				this.forwardToken,
-				this.backToken,
-
-				parseFloat(exchangeSumUsd),
-			)
-
-			this.logger.log(
-				`Swapping ${this.forwardToken.symbol} -> ${this.backToken.symbol} for value: ${forwardRate.value}`,
-			)
-
-			await this.swap(forwardRate.quote)
-		} else {
-			const usdcValue = await getTokenValue(
-				SOLANA_USDC,
-				this.forwardToken,
-				parseFloat(exchangeSumUsd),
-			)
-
-			const forwardRate = await getTokenExchangeRate(
-				this.forwardToken,
-				this.backToken,
-				usdcValue.value,
-			)
-
-			this.logger.log(
-				`Swapping ${this.forwardToken.symbol} -> ${this.backToken.symbol} for value: ${usdcValue.value}`,
-			)
-
-			await this.swap(forwardRate.quote)
-		}
+		await this.swapLogic(this.forwardToken, this.backToken)
 	}
 
 	async swapBack() {
-		const exchangeSumUsd = this.settingsService.getSettings().usdBudget
-
-		if (this.backToken.address === SOLANA_USDC.address) {
-			const forwardRate = await getTokenExchangeRate(
-				this.backToken,
-				this.forwardToken,
-				parseFloat(exchangeSumUsd),
-			)
-
-			this.logger.log(
-				`Swapping ${this.backToken.symbol} -> ${this.forwardToken.symbol} for value: ${forwardRate.value}`,
-			)
-
-			await this.swap(forwardRate.quote)
-		} else {
-			const usdcValue = await getTokenValue(
-				SOLANA_USDC,
-				this.backToken,
-				parseFloat(exchangeSumUsd),
-			)
-
-			const forwardRate = await getTokenExchangeRate(
-				this.backToken,
-				this.forwardToken,
-				usdcValue.value,
-			)
-
-			this.logger.log(
-				`Swapping ${this.backToken.symbol} -> ${this.forwardToken.symbol} for value: ${usdcValue.value}`,
-			)
-
-			await this.swap(forwardRate.quote)
-		}
+		await this.swapLogic(this.backToken, this.forwardToken)
 	}
 
 	async getTokenBalance(address: string) {
