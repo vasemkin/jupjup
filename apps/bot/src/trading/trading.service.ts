@@ -8,7 +8,7 @@ import { Interval } from '@nestjs/schedule'
 
 import { SOLANA_NATIVE_SOL, SOLANA_USDC } from '@jupjup/constants'
 
-import { getTokenExchangeRate, getTokenValue } from '@jupjup/utils'
+import { getTokenExchangeRate } from '@jupjup/utils'
 
 import { SettingsService } from '../settings/settings.service'
 import { QuoteResponse, postSwap } from '@jupjup/jupiter-client'
@@ -40,16 +40,16 @@ export class TradingService {
 		this.logger.log(`Wallet loaded at address ${address.toString()}!`)
 	}
 
-	@Interval(10 * 1000)
+	@Interval(60 * 1000)
 	async trade() {
 		//todo: check which token has balance rn
 
-		await this.swapUsdcToSol()
+		await this.swapForward()
 
-		await this.swapSolToUsdc()
+		await this.swapBack()
 	}
 
-	async swapUsdcToSol() {
+	async swapForward() {
 		const exchangeSum = this.settingsService.getSettings().usdBudget
 
 		const { value, quote } = await getTokenExchangeRate(
@@ -63,7 +63,7 @@ export class TradingService {
 		await this.swap(quote)
 	}
 
-	async swapSolToUsdc() {
+	async swapBack() {
 		const exchangeSum = this.settingsService.getSettings().usdBudget
 		this.logger.log(`Exchanging ${exchangeSum} SOL to USDT...`)
 
@@ -108,7 +108,15 @@ export class TradingService {
 			skipPreflight: true,
 			maxRetries: 2,
 		})
-		await this.connection.confirmTransaction(txid)
+
+		const latestBlockHash = await this.connection.getLatestBlockhash()
+		this.logger.log(`https://solscan.io/tx/${txid}`)
+
+		await this.connection.confirmTransaction({
+			blockhash: latestBlockHash.blockhash,
+			lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+			signature: txid,
+		})
 
 		this.logger.log(`https://solscan.io/tx/${txid}`)
 		this.logger.log(`Swapped successfully`)
