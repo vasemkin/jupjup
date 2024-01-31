@@ -10,7 +10,6 @@
  * @requires types - Module defining various custom types used throughout the application.
  */
 
-import { SOLANA_USDC_10 } from './numerical'
 import { Strategy } from './strategies'
 import { AppSettings } from './types'
 
@@ -22,5 +21,5 @@ import { AppSettings } from './types'
  */
 export const DEFAULT_SETTINGS: AppSettings = {
 	tradingMode: Strategy.DDCA,
-	usdBudget: SOLANA_USDC_10,
+	usdBudget: '10',
 }

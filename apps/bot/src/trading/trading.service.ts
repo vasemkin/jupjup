@@ -10,6 +10,8 @@ import { SOLANA_NATIVE_SOL, SOLANA_USDC } from '@jupjup/constants'
 
 import { getTokenExchangeRate, getTokenValue } from '@jupjup/utils'
 
+import { SettingsService } from '../settings/settings.service'
+
 type RouteMap = Record<string, string[]>
 
 @Injectable()
@@ -17,7 +19,10 @@ export class TradingService {
 	wallet: Wallet
 	logger: Logger
 
-	constructor(private configService: ConfigService) {
+	constructor(
+		private configService: ConfigService,
+		private settingsService: SettingsService,
+	) {
 		// this is set in the monorepo root
 		const pk = this.configService.get('NX_SOLANA_PK') || ''
 
@@ -30,40 +35,17 @@ export class TradingService {
 	}
 
 	@Interval(5000)
-	async handleInterval() {
-		this.logger.log('Called every 5 seconds')
-		await this.getCurrentPrice()
-	}
+	async trade() {
+		const exchangeSum = this.settingsService.getSettings().usdBudget
 
-	async getCurrentPrice() {
-		const solanaValue = await getTokenValue(
-			SOLANA_USDC,
-			SOLANA_NATIVE_SOL,
-			100,
-		)
-
-		console.log(`for 100 USDC i will get ${solanaValue} SOL`)
-
-		const usdcValue = await getTokenValue(
-			SOLANA_NATIVE_SOL,
-			SOLANA_USDC,
-			solanaValue,
-		)
-
-		console.log(`for ${solanaValue} SOL i will get ${usdcValue} USDC`)
+		this.logger.log(`Exchanging ${exchangeSum} USDC to SOL...`)
 
 		const usdcRate = await getTokenExchangeRate(
 			SOLANA_USDC,
 			SOLANA_NATIVE_SOL,
-			10,
+			parseFloat(exchangeSum),
 		)
-		console.log(`1 USDC costs ${usdcRate} SOL`)
 
-		const solRate = await getTokenExchangeRate(
-			SOLANA_NATIVE_SOL,
-			SOLANA_USDC,
-			10,
-		)
-		console.log(`1 SOL costs ${solRate} USDC`)
+		this.logger.log(`Current rate: ${usdcRate}`)
 	}
 }

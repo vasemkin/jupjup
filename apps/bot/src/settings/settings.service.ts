@@ -9,13 +9,10 @@ export class SettingsService {
 	private mockDB: SettingsModel
 
 	constructor(private configService: ConfigService) {
-		this.mockDB.tradingMode = parseStrategy(
-			this.configService.get('TRADING_MODE'),
-		)
-
-		this.mockDB.usdBudget = parseUsdBudgetWithDefault(
-			this.configService.get('USD_BUDGET'),
-		)
+		this.mockDB = {
+			tradingMode: parseStrategy(this.configService.get('TRADING_MODE')),
+			usdBudget: this.configService.get('USD_BUDGET') ?? '10',
+		}
 	}
 
 	getSettings = (): SettingsModel => {
