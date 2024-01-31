@@ -1,4 +1,4 @@
-import { SOLANA_USDC_ADDRESS } from '@jupjup/constants'
+import { SOLANA_USDC_ADDRESS, Token } from '@jupjup/constants'
 import { getQuote, QuoteResponse } from '@jupjup/jupiter-client'
 
 /**
@@ -61,14 +61,14 @@ export const calculateSPLTokenAmount = async (
 export const parseDecimals = (
 	amount: number,
 	decimals: number,
-): { result: string | null; error: string | null } => {
+): { result: string | null; error: string | null; result_n: number | null } => {
 	if (
 		typeof amount === 'undefined' ||
 		isNaN(amount) ||
 		amount < 0 ||
 		decimals < 0
 	) {
-		return { result: null, error: 'Invalid input' }
+		return { result: null, result_n: null, error: 'Invalid input' }
 	}
 
 	const smallestUnitMultiplier = 10 ** decimals
@@ -76,6 +76,7 @@ export const parseDecimals = (
 
 	return {
 		result: BigInt(Math.round(smallestUnitAmount)).toString(),
+		result_n: Math.round(smallestUnitAmount),
 		error: null,
 	}
 }
@@ -92,4 +93,65 @@ export const parseDecimals = (
  */
 export const parseUSDC = (
 	amount: number,
-): { result: string | null; error: string | null } => parseDecimals(amount, 6)
+): { result: string | null; error: string | null; result_n: number | null } =>
+	parseDecimals(amount, 6)
+
+/**
+ * Fetches the amount of token B you get for token A.
+ *
+ * @param inputToken - The token object representing the input token.
+ * @param outputToken - The token object representing the output token.
+ * @param amount - The amount of the input token to be swapped.
+ * @returns The exchange rate as a number, or null if the quote cannot be fetched.
+ */
+export async function getTokenValue(
+	inputToken: Token,
+	outputToken: Token,
+	amount: number,
+): Promise<number | null> {
+	try {
+		const inputAmountString = parseDecimals(amount, inputToken.decimals)
+			.result!
+		const quoteResponse: QuoteResponse = await getQuote({
+			inputMint: inputToken.address,
+			outputMint: outputToken.address,
+			amount: inputAmountString,
+		})
+
+		if (!quoteResponse || !quoteResponse.outAmount) {
+			return null
+		}
+
+		const multiplier = 10 ** outputToken.decimals
+
+		const outputAmount = parseFloat(quoteResponse.outAmount) / multiplier
+
+		return outputAmount
+	} catch (error) {
+		console.error('Error fetching exchange rate: ', error)
+		return null
+	}
+}
+
+/**
+ * Fetches how much a token B costs in token A.
+ *
+ * @param inputToken - The token object representing the input token.
+ * @param outputToken - The token object representing the output token.
+ * @param amount - The amount of the input token to be swapped.
+ * @returns The exchange rate as a number, or null if the quote cannot be fetched.
+ */
+export async function getTokenExchangeRate(
+	inputToken: Token,
+	outputToken: Token,
+	amount: number,
+): Promise<number | null> {
+	try {
+		const outValue = await getTokenValue(inputToken, outputToken, amount)
+
+		return outValue ? outValue / amount : null
+	} catch (error) {
+		console.error('Error fetching exchange rate: ', error)
+		return null
+	}
+}

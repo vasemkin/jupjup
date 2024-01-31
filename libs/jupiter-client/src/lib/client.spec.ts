@@ -1,8 +1,9 @@
-import { getQuote } from './client'
 import {
 	SOLANA_NATIVE_SOL_ADDRESS,
 	SOLANA_WEN_ADDRESS,
 } from '@jupjup/constants'
+
+import { getQuote } from './client'
 
 describe('axios-client', () => {
 	it('can send a request', async () => {
