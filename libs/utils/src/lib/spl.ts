@@ -96,6 +96,11 @@ export const parseUSDC = (
 ): { result: string | null; error: string | null; result_n: number | null } =>
 	parseDecimals(amount, 6)
 
+type TokenResponse = {
+	value: number
+	quote: QuoteResponse
+}
+
 /**
  * Fetches the amount of token B you get for token A.
  *
@@ -108,7 +113,7 @@ export async function getTokenValue(
 	inputToken: Token,
 	outputToken: Token,
 	amount: number,
-): Promise<number | null> {
+): Promise<TokenResponse | null> {
 	try {
 		const inputAmountString = parseDecimals(amount, inputToken.decimals)
 			.result!
@@ -126,7 +131,7 @@ export async function getTokenValue(
 
 		const outputAmount = parseFloat(quoteResponse.outAmount) / multiplier
 
-		return outputAmount
+		return { value: outputAmount, quote: quoteResponse }
 	} catch (error) {
 		console.error('Error fetching exchange rate: ', error)
 		return null
@@ -145,11 +150,13 @@ export async function getTokenExchangeRate(
 	inputToken: Token,
 	outputToken: Token,
 	amount: number,
-): Promise<number | null> {
+): Promise<TokenResponse | null> {
 	try {
-		const outValue = await getTokenValue(inputToken, outputToken, amount)
+		const output = await getTokenValue(inputToken, outputToken, amount)
 
-		return outValue ? outValue / amount : null
+		return output?.value
+			? { value: output.value / amount, quote: output.quote }
+			: null
 	} catch (error) {
 		console.error('Error fetching exchange rate: ', error)
 		return null
