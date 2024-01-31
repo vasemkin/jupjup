@@ -11,7 +11,7 @@ export class SettingsService {
 	constructor(private configService: ConfigService) {
 		this.mockDB = {
 			tradingMode: parseStrategy(this.configService.get('TRADING_MODE')),
-			usdBudget: this.configService.get('USD_BUDGET') ?? '10',
+			usdBudget: this.configService.get('NX_USD_BUDGET') ?? '10',
 		}
 	}
 
