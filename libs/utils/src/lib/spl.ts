@@ -121,6 +121,7 @@ export async function getTokenValue(
 			inputMint: inputToken.address,
 			outputMint: outputToken.address,
 			amount: inputAmountString,
+			slippageBps: 10,
 		})
 
 		if (!quoteResponse || !quoteResponse.outAmount) {

@@ -1,25 +1,41 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 
-import { Connection, Keypair, VersionedTransaction } from '@solana/web3.js'
+import {
+	Connection,
+	GetProgramAccountsFilter,
+	Keypair,
+	PublicKey,
+	VersionedTransaction,
+} from '@solana/web3.js'
 import { Wallet } from '@coral-xyz/anchor'
 import bs58 from 'bs58'
 import { Interval } from '@nestjs/schedule'
 
-import { SOLANA_NATIVE_SOL, SOLANA_USDC } from '@jupjup/constants'
+import {
+	SOLANA_NATIVE_SOL,
+	SOLANA_USDC,
+	SOLANA_WEN,
+	Token,
+} from '@jupjup/constants'
 
-import { getTokenExchangeRate } from '@jupjup/utils'
+import { getTokenExchangeRate, getTokenValue } from '@jupjup/utils'
 
 import { SettingsService } from '../settings/settings.service'
 import { QuoteResponse, postSwap } from '@jupjup/jupiter-client'
-
-type RouteMap = Record<string, string[]>
 
 @Injectable()
 export class TradingService {
 	wallet: Wallet
 	connection: Connection
 	logger: Logger
+
+	isTrading: boolean
+	tradeSuccess: boolean
+	abortController: AbortController
+
+	forwardToken: Token
+	backToken: Token
 
 	constructor(
 		private configService: ConfigService,
@@ -37,51 +53,127 @@ export class TradingService {
 
 		const address = this.wallet.publicKey
 
+		this.abortController = new AbortController()
+
 		this.logger.log(`Wallet loaded at address ${address.toString()}!`)
+
+		this.isTrading = false
+		this.tradeSuccess = false
+
+		this.forwardToken = SOLANA_USDC
+		this.backToken = SOLANA_WEN
 	}
 
-	@Interval(60 * 1000)
-	async trade() {
-		//todo: check which token has balance rn
+	@Interval(5 * 1000)
+	async txNotMined() {
+		if (this.isTrading && !this.tradeSuccess) {
+			Logger.log('Trade unsuccessful, aborting')
+			this.abortController.abort('Tx not mined')
+			this.abortController = new AbortController()
+		}
+	}
 
-		await this.swapForward()
+	@Interval(10 * 1000)
+	async trade() {
+		const forwardTokenBalance = await this.getTokenBalance(
+			this.forwardToken.address,
+		)
+		console.log({ forwardTokenBalance })
+
+		const backTokenBalance = await this.getTokenBalance(
+			this.backToken.address,
+		)
+		console.log({ backTokenBalance })
+
+		this.isTrading = true
+		if (forwardTokenBalance > backTokenBalance) {
+			await this.swapForward()
+		} else {
+			await this.swapBack()
+		}
+		this.isTrading = false
 
 		await this.swapBack()
 	}
 
 	async swapForward() {
-		const exchangeSum = this.settingsService.getSettings().usdBudget
+		const exchangeSumUsd = this.settingsService.getSettings().usdBudget
 
-		const { value, quote } = await getTokenExchangeRate(
+		const usdcValue = await getTokenValue(
 			SOLANA_USDC,
-			SOLANA_NATIVE_SOL,
-			parseFloat(exchangeSum),
+			this.forwardToken,
+			parseFloat(exchangeSumUsd),
 		)
 
-		this.logger.log(`Swapping USDC -> SOL at rate: ${value}`)
+		const forwardRate = await getTokenExchangeRate(
+			this.forwardToken,
+			this.backToken,
+			usdcValue.value,
+		)
 
-		await this.swap(quote)
+		this.logger.log(
+			`Swapping ${this.forwardToken.symbol} -> ${this.backToken.symbol} for value: ${usdcValue.value}`,
+		)
+
+		await this.swap(forwardRate.quote)
 	}
 
 	async swapBack() {
-		const exchangeSum = this.settingsService.getSettings().usdBudget
-		this.logger.log(`Exchanging ${exchangeSum} SOL to USDT...`)
+		const exchangeSumUsd = this.settingsService.getSettings().usdBudget
 
-		const usdcRate = await getTokenExchangeRate(
+		const usdcValue = await getTokenValue(
 			SOLANA_USDC,
-			SOLANA_NATIVE_SOL,
-			parseInt(exchangeSum),
+			this.backToken,
+			parseFloat(exchangeSumUsd),
 		)
 
-		const solRate = await getTokenExchangeRate(
-			SOLANA_NATIVE_SOL,
-			SOLANA_USDC,
-			usdcRate.value,
+		const forwardRate = await getTokenExchangeRate(
+			this.backToken,
+			this.forwardToken,
+			usdcValue.value,
 		)
 
-		this.logger.log(`Swapping SOL -> USDC at rate: ${solRate.value}`)
+		this.logger.log(
+			`Swapping ${this.backToken.symbol} -> ${this.forwardToken.symbol} for value: ${usdcValue.value}`,
+		)
 
-		await this.swap(solRate.quote)
+		await this.swap(forwardRate.quote)
+	}
+
+	async getTokenBalance(address: string) {
+		const filters: GetProgramAccountsFilter[] = [
+			{
+				dataSize: 165, //size of account (bytes)
+			},
+			{
+				memcmp: {
+					offset: 32, //location of our query in the account (bytes)
+					bytes: new PublicKey(this.wallet.publicKey).toBase58(),
+				},
+			},
+		]
+
+		const accounts = await this.connection.getParsedProgramAccounts(
+			new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'),
+			{ filters: filters },
+		)
+
+		accounts.forEach((account, i) => {
+			//Parse the account data
+			const parsedAccountInfo: any = account.account.data
+			const mintAddress: string =
+				parsedAccountInfo['parsed']['info']['mint']
+
+			if (mintAddress === address) {
+				const tokenBalance: number =
+					parsedAccountInfo['parsed']['info']['tokenAmount'][
+						'uiAmount'
+					]
+				return tokenBalance
+			}
+		})
+
+		return 0
 	}
 
 	async swap(quote: QuoteResponse) {
@@ -110,15 +202,21 @@ export class TradingService {
 		})
 
 		const latestBlockHash = await this.connection.getLatestBlockhash()
-		this.logger.log(`https://solscan.io/tx/${txid}`)
 
-		await this.connection.confirmTransaction({
-			blockhash: latestBlockHash.blockhash,
-			lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
-			signature: txid,
-		})
+		try {
+			await this.connection.confirmTransaction({
+				blockhash: latestBlockHash.blockhash,
+				lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+				signature: txid,
+				abortSignal: this.abortController.signal,
+			})
 
-		this.logger.log(`https://solscan.io/tx/${txid}`)
-		this.logger.log(`Swapped successfully`)
+			this.logger.log(`https://solscan.io/tx/${txid}`)
+			this.logger.log(`Swapped successfully`)
+
+			this.tradeSuccess = true
+		} catch (error) {
+			this.tradeSuccess = false
+		}
 	}
 }
