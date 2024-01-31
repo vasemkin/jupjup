@@ -5,19 +5,10 @@ import { Connection, Keypair, VersionedTransaction } from '@solana/web3.js'
 import { Wallet } from '@coral-xyz/anchor'
 import bs58 from 'bs58'
 import { Interval } from '@nestjs/schedule'
-import { getQuote } from '@jupjup/jupiter-client'
-import {
-	SOLANA_NATIVE_SOL,
-	SOLANA_NATIVE_SOL_ADDRESS,
-	SOLANA_USDC,
-	SOLANA_USDC_ADDRESS,
-} from '@jupjup/constants'
-import {
-	getTokenExchangeRate,
-	getTokenValue,
-	parseDecimals,
-	parseUSDC,
-} from '@jupjup/utils'
+
+import { SOLANA_NATIVE_SOL, SOLANA_USDC } from '@jupjup/constants'
+
+import { getTokenExchangeRate, getTokenValue } from '@jupjup/utils'
 
 type RouteMap = Record<string, string[]>
 
