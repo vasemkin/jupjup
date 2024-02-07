@@ -3,6 +3,7 @@
 	"version": "0.0.0",
 	"license": "MIT",
 	"scripts": {
+		"start": "pnpm nx serve bot",
 		"prettier": "pnpm nx format:write --all",
 		"prepare": "cd libs/jupiter-client && pnpm install && cd ../../ && pnpm nx run jupiter-client:generate",
 		"test": "pnpm nx run-many -t test",
