@@ -6,7 +6,7 @@
 		"prettier": "pnpm nx format:write --all",
 		"prepare": "cd libs/jupiter-client && pnpm install && cd ../../ && pnpm nx run jupiter-client:generate",
 		"test": "pnpm nx run-many -t test",
-		"test:app": "pnpm nx test ddca --verbose",
+		"test:bot": "pnpm nx test bot --verbose",
 		"test:utils": "pnpm nx test utils --verbose",
 		"test:jup-client": "pnpm nx test jupiter-client --verbose"
 	},

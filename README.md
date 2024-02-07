@@ -6,9 +6,12 @@ This trading bot is designed to operate on the Solana blockchain, utilizing two 
 
 ### Strategies
 
-1. **Ping-Pong**: This strategy involves setting predefined buy and sell prices. The bot buys an asset when its price drops to a certain level and sells when the price rises to a predetermined higher level.
+1. **DDCA (Dumb Dollar Cost Averaging)**: In this unique strategy, the bot regularly buys and sells a set amount of tokens (in USD equivalent) regardless of the price, aiming to catch significant market spikes or dips.
 
-2. **DDCA (Dumb Dollar Cost Averaging)**: In this unique strategy, the bot regularly buys and sells a set amount of tokens (in USD equivalent) regardless of the price, aiming to catch significant market spikes or dips.
+2. **Ping-Pong**: This strategy involves setting predefined buy and sell prices. The bot buys an asset when its price drops to a certain level and sells when the price rises to a predetermined higher level. Currently not implemented.
+
+Here is an example of a transaction the DDCA bot tries to execute:
+https://solscan.io/tx/3vLorW1jbgoTfpR37i19PjUNVdjAmRGgXYVsbCwipZALKG79w4EjitoTo5CogsYdxgLU8NePGtor6G9AuWYThn6C
 
 ## Requirements
 
@@ -41,8 +44,8 @@ Create a `.env` file in the project root and configure the following parameters:
 
 -   `NX_SOLANA_PK`: Your wallet private key.
 -   `NX_SOLANA_RPC_ENDPOINT`: Solana RPC endpoint URL.
--   `NX_TRADING_MODE`: Trading strat: DDCA or PING_PONG.
--   `NX_USD_BUDGET`: Trading budget for DDCA and ping pong entry.
+-   `NX_TRADING_MODE`: Trading strategy: currently only DDCA.
+-   `NX_USD_BUDGET`: Trading budget in USD.
 
 ## Usage
 
